@@ -11,7 +11,7 @@ class Configurations {
         coefClockMargin: .5,
         clocksPerSecond: 1,
     }
-    one = (this.screen.height - this.screen.paddingsTopBottom) / (this.consts.clocksQuantity + (this.consts.clocksQuantity - 1) * this.consts.coefClockMargin);
+    one = (this.screen.height - this.screen.paddingsTopBottom * 2) / (this.consts.clocksQuantity + (this.consts.clocksQuantity - 1) * this.consts.coefClockMargin);
     clock = {
         size: this.one,
         margins: this.one * this.consts.coefClockMargin,

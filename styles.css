@@ -1,7 +1,7 @@
 .clock {
     position: fixed;
     left: 100vw;
-    animation: animateClock 10s linear;
+    animation: animateClock 7s linear 1;
     border: 1px solid black;
 }
 
