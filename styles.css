@@ -1,0 +1,15 @@
+.clock {
+    position: fixed;
+    left: 100vw;
+    animation: animateClock 10s linear;
+    border: 1px solid black;
+}
+
+@keyframes animateClock {
+    from {
+        left: 100vw;
+    }
+    to {
+        left: 0vw;
+    }
+}
