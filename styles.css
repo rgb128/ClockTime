@@ -10,6 +10,6 @@
         left: 100vw;
     }
     to {
-        left: 0vw;
+        left: -50vw;
     }
 }

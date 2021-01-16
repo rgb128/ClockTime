@@ -16,6 +16,7 @@ class Configurations {
         size: this.one,
         margins: this.one * this.consts.coefClockMargin,
         cssClass: 'clock',
+        cssAnimationName: 'animateClock',
     };
 
     constructor() {}
@@ -66,6 +67,12 @@ class Clock {
         if (!this.time) { throw new Error('Time must be initialized'); }
         this.root = this.createRootElement();
         this.root.style.top = `${CONFIG.screen.paddingsTopBottom + numberOnTop * (CONFIG.clock.size + CONFIG.clock.margins)}px`;
+        const timeToDeath = this.calculateTimeToLive();
+        this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
+        // die. refactor this later
+        setTimeout(() => {
+            this.root.remove();
+        }, timeToDeath * 1000);
         container.appendChild(this.root);
         this.redraw();
         if (this.interval !== undefined) clearInterval(this.interval);
@@ -93,6 +100,18 @@ class Clock {
         rootBF.style.height = CONFIG.clock.size + 'px';
         rootBF.context = this;
         return rootBF;
+    }
+
+    /**
+     * @return {number} calculated time to set to animation property
+     */
+    calculateTimeToLive() {
+        const smallDistance = CONFIG.clock.size + CONFIG.clock.margins;
+        const smallTime = 1 / CONFIG.consts.clocksPerSecond;
+        const velocity = smallDistance / smallTime;
+        const bigDistance = CONFIG.screen.width * 1.5; // Because animation is from left = 100vw to left = -50vw
+        const bigTime = bigDistance / velocity;
+        return bigTime;
     }
 }
 
