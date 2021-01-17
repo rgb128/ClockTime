@@ -4,11 +4,11 @@ class Configurations {
     screen = {
         width: document.documentElement.clientWidth,
         height: document.documentElement.clientHeight,
-        paddingsTopBottom: document.documentElement.clientHeight / 10,
+        paddingsTopBottom: document.documentElement.clientHeight / 20,
     };
     consts = {
         clocksQuantity: 4,
-        coefClockMargin: .5,
+        coefClockMargin: .3,
         clocksPerSecond: 1,
         colors: ['red', 'green', 'blue'],
         minSpeed: .5, // Can be undefined
@@ -55,6 +55,8 @@ class Configurations {
 
 /** @type {Configurations} */
 let CONFIG = new Configurations();
+
+const CONTAINER = document.getElementById('container');
 
 window.onresize = (e) => {
     CONFIG = new Configurations();
@@ -156,6 +158,20 @@ class Clock {
         // rootBF.style.border = `${CONFIG.clock.border}px solid ${color ? color : CONFIG.clock.defaultColor}`;
         rootBF.style.borderRadius = CONFIG.clock.size / 2 + 'px';
         rootBF.style.backgroundColor = color ? color : CONFIG.clock.defaultColor;
+        rootBF.onclick = (e) => {
+            const targerElement = e.target;
+            /** @type {Clock} */
+            const targetContext = targerElement.context;
+            for (const element of CONTAINER.children) {
+                /** @type {Clock} */
+                const context = element.context;
+                context.stop();
+                context.time = targetContext.time.clone();
+                context.reverse = targetContext.reverse;
+                context.redraw();
+                element.onclick = () => { };
+            }
+        }
         return rootBF;
     }
 
@@ -212,8 +228,6 @@ class Clock {
         this.root.appendChild(this.hands.minute);
         this.root.appendChild(this.hands.second);
     }
-
-    
 
     rotateHands() {
         /**
@@ -391,12 +405,10 @@ setInterval(() => {
         new Clock(
             Time.random(), 
             true, 
-            container, 
+            CONTAINER, 
             i, 
             CONFIG.consts.colors[colorId],
             speed,
             reverseTrue);
     }
 }, 1000 / CONFIG.consts.clocksPerSecond);
-
-
