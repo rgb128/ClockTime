@@ -138,8 +138,8 @@ class Clock {
         this.redraw();
         if (this.interval !== undefined) clearInterval(this.interval);
         this.interval = setInterval(() => {
-            // this.time.addASecond();
-            // this.redraw();
+            this.time.addASecond();
+            this.redraw();
         }, 1000);
     }
 
@@ -242,8 +242,8 @@ class Clock {
             return angle;
         }
 
-        this.hands.hour.style.transform = `rotate(${countAngleByTime(this.time.hours, 12, true)}deg)`;
-        this.hands.minute.style.transform = `rotate(${countAngleByTime(this.time.minute, 60, true)}deg)`;
+        this.hands.hour.style.transform = `rotate(${countAngleByTime(this.time.hours + this.time.minutes / 60 + this.time.seconds / 3600, 12, true)}deg)`;
+        this.hands.minute.style.transform = `rotate(${countAngleByTime(this.time.minutes + this.time.seconds / 60, 60, true)}deg)`;
         this.hands.second.style.transform = `rotate(${countAngleByTime(this.time.seconds, 60, false)}deg)`;
     }
 }
@@ -387,6 +387,8 @@ class Time {
 
 for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
     // const c = new Clock(Time.random(), true, container, i);
-    const c = new Clock(new Time(0, 0, 0), true, container, i);
+    let time = Time.random();
+    console.log(time.toString());
+    const c = new Clock(time, true, container, i);
     c.root.style.left = '100px';
 }
