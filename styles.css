@@ -1,7 +1,12 @@
+*{
+    box-sizing: border-box;
+}
+
 .clock {
     position: fixed;
     left: 100vw;
-    animation: animateClock 7s linear 1;
+    /* remove this */
+    /* animation: animateClock 7s linear 1; */
     border: 1px solid black;
 }
 
@@ -12,4 +17,18 @@
     to {
         left: -50vw;
     }
+}
+
+.hand {
+    position: absolute;
+}
+.hand.hour {
+}
+
+.centerpoint {
+    position: absolute;
+    background-color: red;
+    width: 2px;
+    height: 2px;
+    z-index: 100;
 }

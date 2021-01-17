@@ -7,8 +7,8 @@ class Configurations {
         paddingsTopBottom: document.documentElement.clientHeight / 10,
     };
     consts = {
-        clocksQuantity: 4,
-        coefClockMargin: .5,
+        clocksQuantity: 1, // 4
+        coefClockMargin: .1, // .5
         clocksPerSecond: 1,
     }
     one = (this.screen.height - this.screen.paddingsTopBottom * 2) / (this.consts.clocksQuantity + (this.consts.clocksQuantity - 1) * this.consts.coefClockMargin);
@@ -17,6 +17,56 @@ class Configurations {
         margins: this.one * this.consts.coefClockMargin,
         cssClass: 'clock',
         cssAnimationName: 'animateClock',
+        hands: {
+            // hour: {
+            //     height: this.one / 4,
+            //     width: 3,
+            //     border: 1,
+            //     fill: false,
+            //     round: true,
+            //     color: 'black'
+            // },
+            // minute: {
+            //     height: this.one / 3.5,
+            //     width: 2,
+            //     border: 0,
+            //     fill: true,
+            //     round: false,
+            //     color: 'black'
+            // },
+            // second: {
+            //     height: this.one / 5,
+            //     width: 1,
+            //     border: 0,
+            //     fill: true,
+            //     round: false,
+            //     color: 'black'
+            // }
+            hour: {
+                height: this.one / 3.5,
+                width: this.one / 15,
+                border: this.one / 90,
+                fill: false,
+                round: true,
+                color: 'black'
+            },
+            minute: {
+                height: this.one / 3,
+                width: this.one / 40,
+                border: 0,
+                fill: true,
+                round: true,
+                color: 'black'
+            },
+            second: {
+                height: this.one / 2.5,
+                width: this.one / 80,
+                border: 0,
+                fill: true,
+                round: false,
+                color: 'black'
+            }
+        }
     };
 
     constructor() {}
@@ -35,6 +85,15 @@ class Clock {
     /** @type {HTMLElement} */
     root;
     interval;
+
+    hands = {
+        /** @type {HTMLElement} */
+        hour: document.createElement('div'),
+        /** @type {HTMLElement} */
+        minute: document.createElement('div'),
+        /** @type {HTMLElement} */
+        second: document.createElement('div'),
+    }
 
     /**
      * 
@@ -68,17 +127,19 @@ class Clock {
         this.root = this.createRootElement();
         this.root.style.top = `${CONFIG.screen.paddingsTopBottom + numberOnTop * (CONFIG.clock.size + CONFIG.clock.margins)}px`;
         const timeToDeath = this.calculateTimeToLive();
-        this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
+        // TODO here uncomment
+        // this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
         // die. refactor this later
         setTimeout(() => {
-            this.root.remove();
+            // this.root.remove();
         }, timeToDeath * 1000);
         container.appendChild(this.root);
+        this.createHands();
         this.redraw();
         if (this.interval !== undefined) clearInterval(this.interval);
         this.interval = setInterval(() => {
-            this.time.addASecond();
-            this.redraw();
+            // this.time.addASecond();
+            // this.redraw();
         }, 1000);
     }
 
@@ -88,7 +149,8 @@ class Clock {
     }
 
     redraw() {
-        this.root.innerText = this.time.toString();
+        // this.root.innerText = this.time.toString();
+        this.rotateHands();
     }
 
     /** @returns {HTMLElement} */
@@ -112,6 +174,77 @@ class Clock {
         const bigDistance = CONFIG.screen.width * 1.5; // Because animation is from left = 100vw to left = -50vw
         const bigTime = bigDistance / velocity;
         return bigTime;
+    }
+
+    createHands() {
+        /**
+         * sets all nesessary styles to one hand
+         * @param {HTMLElement} hand 
+         * @param {Configurations.clock.hands.hour} config 
+         */
+        function createHand(hand, config) {
+            /* height: this.one / 4,
+                width: 3,
+                border: 1,
+                fill: false,
+                round: true,
+                color: 'black' */
+            hand.style.height = config.height + 'px';
+            hand.style.width = config.width + 'px';
+            hand.style.borderRadius = config.round ? (config.width / 2 + 'px') : '0px';
+            hand.style.top = (CONFIG.clock.size / 2 + config.width / 2 - config.height) + 'px';
+            hand.style.left = (CONFIG.clock.size / 2 - config.width / 2) + 'px';
+            hand.style.border = `${config.border}px solid ${config.color}`;
+            hand.style.transformOrigin = `50% ${config.height - config.width / 2}px`;
+            hand.style.backgroundColor = config.fill ? config.color : 'transparent';
+        }
+
+        // center point
+        const centerPoint = document.createElement('div');
+        centerPoint.classList.add('centerpoint');
+        centerPoint.style.top = CONFIG.clock.size / 2 - 1 + 'px';
+        centerPoint.style.left = CONFIG.clock.size / 2 - 1 + 'px';
+        this.root.appendChild(centerPoint);
+
+        // Hour
+        this.hands.hour = document.createElement('div');
+        this.hands.hour.classList.add('hand', 'hour');
+        createHand(this.hands.hour, CONFIG.clock.hands.hour);
+        // Minute
+        this.hands.minute = document.createElement('div');
+        this.hands.minute.classList.add('hand', 'minute');
+        createHand(this.hands.minute, CONFIG.clock.hands.minute);
+        // Hour
+        this.hands.second = document.createElement('div');
+        this.hands.second.classList.add('hand', 'second');
+        createHand(this.hands.second, CONFIG.clock.hands.second);
+
+        this.root.appendChild(this.hands.hour);
+        this.root.appendChild(this.hands.minute);
+        this.root.appendChild(this.hands.second);
+    }
+
+    
+
+    rotateHands() {
+        /**
+         * calculates angle for hand depending on time
+         * @param {number} time current time
+         * @param {number} maxTime maximal allowed time (12 for hours, 60 for minutes and seconds)
+         * @param {boolean} smooth if true, value will not be exactly in the number
+         * @returns {number} angle in deg
+         */
+        function countAngleByTime(time, maxTime, smooth) {
+            let angle = 360 * time / maxTime;
+            if (!smooth) {
+                angle -= 360 % (360 / maxTime);
+            }
+            return angle;
+        }
+
+        this.hands.hour.style.transform = `rotate(${countAngleByTime(this.time.hours, 12, true)}deg)`;
+        this.hands.minute.style.transform = `rotate(${countAngleByTime(this.time.minute, 60, true)}deg)`;
+        this.hands.second.style.transform = `rotate(${countAngleByTime(this.time.seconds, 60, false)}deg)`;
     }
 }
 
@@ -246,8 +379,14 @@ class Time {
 
 // let c = new Clock(container, undefined, true);
 
-setInterval(() => {
-    for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
-        new Clock(Time.random(), true, container, i);
-    }
-}, 1000);
+// setInterval(() => {
+//     for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
+//         new Clock(Time.random(), true, container, i);
+//     }
+// }, 1000 / CONFIG.consts.clocksPerSecond);
+
+for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
+    // const c = new Clock(Time.random(), true, container, i);
+    const c = new Clock(new Time(0, 0, 0), true, container, i);
+    c.root.style.left = '100px';
+}
