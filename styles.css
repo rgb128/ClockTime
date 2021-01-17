@@ -5,8 +5,6 @@
 .clock {
     position: fixed;
     left: 100vw;
-    /* remove this */
-    /* animation: animateClock 7s linear 1; */
     border: none;
 }
 
@@ -22,7 +20,12 @@
 .hand {
     position: absolute;
 }
+/* 
 .hand.hour {
+}
+.hand.minute {
+}
+.hand.second {
 }
 
 .centerpoint {
@@ -31,4 +34,4 @@
     width: 2px;
     height: 2px;
     z-index: 100;
-}
+} */
