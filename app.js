@@ -7,59 +7,40 @@ class Configurations {
         paddingsTopBottom: document.documentElement.clientHeight / 10,
     };
     consts = {
-        clocksQuantity: 1, // 4
-        coefClockMargin: .1, // .5
+        clocksQuantity: 4,
+        coefClockMargin: .5,
         clocksPerSecond: 1,
+        colors: ['red', 'green', 'blue'],
+        minSpeed: .5, // Can be undefined
+        maxSpeed: 10, // Can be undefined
     }
     one = (this.screen.height - this.screen.paddingsTopBottom * 2) / (this.consts.clocksQuantity + (this.consts.clocksQuantity - 1) * this.consts.coefClockMargin);
     clock = {
+        border: this.one / 15,
+        defaultColor: 'white',
         size: this.one,
         margins: this.one * this.consts.coefClockMargin,
         cssClass: 'clock',
         cssAnimationName: 'animateClock',
         hands: {
-            // hour: {
-            //     height: this.one / 4,
-            //     width: 3,
-            //     border: 1,
-            //     fill: false,
-            //     round: true,
-            //     color: 'black'
-            // },
-            // minute: {
-            //     height: this.one / 3.5,
-            //     width: 2,
-            //     border: 0,
-            //     fill: true,
-            //     round: false,
-            //     color: 'black'
-            // },
-            // second: {
-            //     height: this.one / 5,
-            //     width: 1,
-            //     border: 0,
-            //     fill: true,
-            //     round: false,
-            //     color: 'black'
-            // }
             hour: {
                 height: this.one / 3.5,
                 width: this.one / 15,
-                border: this.one / 90,
+                border: this.one / 50,
                 fill: false,
                 round: true,
                 color: 'black'
             },
             minute: {
-                height: this.one / 3,
-                width: this.one / 40,
+                height: this.one / 2.6,
+                width: this.one / 35,
                 border: 0,
                 fill: true,
                 round: true,
                 color: 'black'
             },
             second: {
-                height: this.one / 2.5,
+                height: this.one / 2.1,
                 width: this.one / 80,
                 border: 0,
                 fill: true,
@@ -85,6 +66,11 @@ class Clock {
     /** @type {HTMLElement} */
     root;
     interval;
+    /** @type {string} */
+    // color;
+
+    /** @type {boolean} */
+    reverse;
 
     hands = {
         /** @type {HTMLElement} */
@@ -101,10 +87,15 @@ class Clock {
      * @param {boolean | undefined} initializeImmediately if true, the clock will call init() method immediately
      * @param {HTMLElement | undefined} container contairner; Nesessary if initializeImmediately is true
      * @param {number | undefined} numberOnTop first is 0. Nesessary if initializeImmediately is true
+     * @param {string|undefined} color color of clock
+     * @param {number|undefined} speed speed. must be > 0
+     * @param {boolean|undefined} reverse reverse clock
      */
-    constructor(time, initializeImmediately, container, numberOnTop) {
+    constructor(time, initializeImmediately, container, numberOnTop, color, speed, reverse) {
 
         this.time = (time && time instanceof Time) ? time.clone() : new Time();
+
+        this.reverse = reverse === true;
 
         if (initializeImmediately === true) {
             if (typeof numberOnTop !== 'number') throw new Error ('NumberOnTop must be initialized');
@@ -112,7 +103,7 @@ class Clock {
             numberOnTop = Math.round(numberOnTop);
             if (numberOnTop < 0) numberOnTop = 0;
             if (numberOnTop >= CONFIG.consts.clocksQuantity) numberOnTop = CONFIG.consts.clocksQuantity-1;
-            this.init(container, numberOnTop);
+            this.init(container, numberOnTop, color, speed);
         }
     }
 
@@ -120,27 +111,29 @@ class Clock {
      * starts clock and redrawing
      * @param {HTMLElement} container
      * @param {number} numberOnTop
+     * @param {string|undefined} color color of clock
+     * @param {number} speed speed. must be > 0
      */
-    init(container, numberOnTop) {
+    init(container, numberOnTop, color, speed) {
         if (!container || !(container instanceof HTMLElement)) { throw new Error('Container must be HTMLElement'); }
         if (!this.time) { throw new Error('Time must be initialized'); }
-        this.root = this.createRootElement();
+        this.root = this.createRootElement(color);
         this.root.style.top = `${CONFIG.screen.paddingsTopBottom + numberOnTop * (CONFIG.clock.size + CONFIG.clock.margins)}px`;
         const timeToDeath = this.calculateTimeToLive();
-        // TODO here uncomment
-        // this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
+        this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
         // die. refactor this later
         setTimeout(() => {
-            // this.root.remove();
+            this.root.remove();
         }, timeToDeath * 1000);
         container.appendChild(this.root);
         this.createHands();
         this.redraw();
+        const realSpeed = (typeof speed === 'number' && speed > 0) ? speed : 1;
         if (this.interval !== undefined) clearInterval(this.interval);
         this.interval = setInterval(() => {
             this.time.addASecond();
             this.redraw();
-        }, 1000);
+        }, 1000 / realSpeed);
     }
 
     /** stops this clock */
@@ -149,18 +142,20 @@ class Clock {
     }
 
     redraw() {
-        // this.root.innerText = this.time.toString();
         this.rotateHands();
     }
 
     /** @returns {HTMLElement} */
-    createRootElement() {
+    createRootElement(color) {
         if (!this.time) { throw new Error('Time must be initialized'); }
         const rootBF = document.createElement('div');
         rootBF.classList.add(CONFIG.clock.cssClass);
         rootBF.style.width = CONFIG.clock.size + 'px';
         rootBF.style.height = CONFIG.clock.size + 'px';
         rootBF.context = this;
+        // rootBF.style.border = `${CONFIG.clock.border}px solid ${color ? color : CONFIG.clock.defaultColor}`;
+        rootBF.style.borderRadius = CONFIG.clock.size / 2 + 'px';
+        rootBF.style.backgroundColor = color ? color : CONFIG.clock.defaultColor;
         return rootBF;
     }
 
@@ -183,12 +178,6 @@ class Clock {
          * @param {Configurations.clock.hands.hour} config 
          */
         function createHand(hand, config) {
-            /* height: this.one / 4,
-                width: 3,
-                border: 1,
-                fill: false,
-                round: true,
-                color: 'black' */
             hand.style.height = config.height + 'px';
             hand.style.width = config.width + 'px';
             hand.style.borderRadius = config.round ? (config.width / 2 + 'px') : '0px';
@@ -200,11 +189,11 @@ class Clock {
         }
 
         // center point
-        const centerPoint = document.createElement('div');
-        centerPoint.classList.add('centerpoint');
-        centerPoint.style.top = CONFIG.clock.size / 2 - 1 + 'px';
-        centerPoint.style.left = CONFIG.clock.size / 2 - 1 + 'px';
-        this.root.appendChild(centerPoint);
+        // const centerPoint = document.createElement('div');
+        // centerPoint.classList.add('centerpoint');
+        // centerPoint.style.top = CONFIG.clock.size / 2 - 1 + 'px';
+        // centerPoint.style.left = CONFIG.clock.size / 2 - 1 + 'px';
+        // this.root.appendChild(centerPoint);
 
         // Hour
         this.hands.hour = document.createElement('div');
@@ -229,22 +218,28 @@ class Clock {
     rotateHands() {
         /**
          * calculates angle for hand depending on time
+         * @param {boolean} reverse
          * @param {number} time current time
          * @param {number} maxTime maximal allowed time (12 for hours, 60 for minutes and seconds)
          * @param {boolean} smooth if true, value will not be exactly in the number
          * @returns {number} angle in deg
          */
-        function countAngleByTime(time, maxTime, smooth) {
+        function countAngleByTime(reverse, time, maxTime, smooth) {
             let angle = 360 * time / maxTime;
             if (!smooth) {
                 angle -= 360 % (360 / maxTime);
             }
+            if (reverse) angle *= -1;
             return angle;
         }
 
-        this.hands.hour.style.transform = `rotate(${countAngleByTime(this.time.hours + this.time.minutes / 60 + this.time.seconds / 3600, 12, true)}deg)`;
-        this.hands.minute.style.transform = `rotate(${countAngleByTime(this.time.minutes + this.time.seconds / 60, 60, true)}deg)`;
-        this.hands.second.style.transform = `rotate(${countAngleByTime(this.time.seconds, 60, false)}deg)`;
+        const hourAngle = countAngleByTime(this.reverse, this.time.hours + this.time.minutes / 60 + this.time.seconds / 3600, 12, true);
+        const minuteAngle = countAngleByTime(this.reverse, this.time.minutes + this.time.seconds / 60, 60, true);
+        const secondAngle = countAngleByTime(this.reverse, this.time.seconds, 60, false);
+
+        this.hands.hour.style.transform = `rotate(${hourAngle}deg)`;
+        this.hands.minute.style.transform = `rotate(${minuteAngle}deg)`;
+        this.hands.second.style.transform = `rotate(${secondAngle}deg)`;
     }
 }
 
@@ -377,18 +372,31 @@ class Time {
     }
 }
 
-// let c = new Clock(container, undefined, true);
-
-// setInterval(() => {
-//     for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
-//         new Clock(Time.random(), true, container, i);
-//     }
-// }, 1000 / CONFIG.consts.clocksPerSecond);
-
-for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
-    // const c = new Clock(Time.random(), true, container, i);
-    let time = Time.random();
-    console.log(time.toString());
-    const c = new Clock(time, true, container, i);
-    c.root.style.left = '100px';
+function map(num, frombottom, fromtop, tobottom, totop) {
+    let a = num - frombottom;
+    a *= (totop-tobottom)/(fromtop-frombottom);
+    a += tobottom;
+    return a;
 }
+
+
+setInterval(() => {
+    for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
+        const colorId = Math.floor(map(Math.random(), 0, 1, 0, CONFIG.consts.colors.length));
+        const reverseTrue = Math.random() < .2;
+        const speed = (CONFIG.consts.minSpeed !== undefined && CONFIG.consts.maxSpeed !== undefined)
+            ? map(Math.random(), 0, 1, CONFIG.consts.minSpeed, CONFIG.consts.maxSpeed)
+            : 1;
+
+        new Clock(
+            Time.random(), 
+            true, 
+            container, 
+            i, 
+            CONFIG.consts.colors[colorId],
+            speed,
+            reverseTrue);
+    }
+}, 1000 / CONFIG.consts.clocksPerSecond);
+
+

@@ -7,7 +7,7 @@
     left: 100vw;
     /* remove this */
     /* animation: animateClock 7s linear 1; */
-    border: 1px solid black;
+    border: none;
 }
 
 @keyframes animateClock {
