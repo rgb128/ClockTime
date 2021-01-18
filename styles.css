@@ -2,6 +2,10 @@
     box-sizing: border-box;
 }
 
+body {
+    background-color: #121212;
+}
+
 .clock {
     position: fixed;
     left: 100vw;
