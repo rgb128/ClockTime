@@ -10,7 +10,21 @@ class Configurations {
         clocksQuantity: 4,
         coefClockMargin: .3,
         clocksPerSecond: 1,
-        colors: ['red', 'green', 'blue'],
+        colors: [
+            "#F1948A",
+            "#C39BD3",
+            "#7FB3D5",
+            "#5DADE2",
+            "#76D7C4",
+            "#82E0AA",
+            "#F7DC6F",
+            "#F0B27A",
+            "#AEB6BF",
+            "#FFA3A3",
+            "#A3FFF1",
+            "#A3B1FF",
+            "#F3ACFF",
+        ],
         minSpeed: .5, // Can be undefined
         maxSpeed: 10, // Can be undefined
     }
