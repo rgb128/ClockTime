@@ -30,7 +30,7 @@ class Configurations {
     }
     one = (this.screen.height - this.screen.paddingsTopBottom * 2) / (this.consts.clocksQuantity + (this.consts.clocksQuantity - 1) * this.consts.coefClockMargin);
     clock = {
-        border: this.one / 15,
+        // border: this.one / 15,
         defaultColor: 'white',
         size: this.one,
         margins: this.one * this.consts.coefClockMargin,
