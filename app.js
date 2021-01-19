@@ -82,12 +82,14 @@ class Clock {
     time;
     /** @type {HTMLElement} */
     root;
-    interval;
-    /** @type {string} */
-    // color;
+
+    running = true;
 
     /** @type {boolean} */
     reverse;
+
+    /** @type {number} */
+    currentLeft;
 
     hands = {
         /** @type {HTMLElement} */
@@ -101,76 +103,62 @@ class Clock {
     /**
      * 
      * @param {Time | undefined} time time to initialize clock
-     * @param {boolean | undefined} initializeImmediately if true, the clock will call init() method immediately
-     * @param {HTMLElement | undefined} container contairner; Nesessary if initializeImmediately is true
-     * @param {number | undefined} numberOnTop first is 0. Nesessary if initializeImmediately is true
+     * @param {HTMLElement | undefined} container contairner
+     * @param {number | undefined} numberOnTop first is 0
      * @param {string|undefined} color color of clock
      * @param {number|undefined} speed speed. must be > 0
      * @param {boolean|undefined} reverse reverse clock
      */
-    constructor(time, initializeImmediately, container, numberOnTop, color, speed, reverse) {
+    constructor(time, container, numberOnTop, color, speed, reverse) {
 
         this.time = (time && time instanceof Time) ? time.clone() : new Time();
 
         this.reverse = reverse === true;
 
-        if (initializeImmediately === true) {
-            if (typeof numberOnTop !== 'number') throw new Error ('NumberOnTop must be initialized');
-            if (!container || !(container instanceof HTMLElement)) throw new Error ('container must be HTMLElement');
-            numberOnTop = Math.round(numberOnTop);
-            if (numberOnTop < 0) numberOnTop = 0;
-            if (numberOnTop >= CONFIG.consts.clocksQuantity) numberOnTop = CONFIG.consts.clocksQuantity-1;
-            this.init(container, numberOnTop, color, speed);
-        }
-    }
+        if (typeof numberOnTop !== 'number') throw new Error ('NumberOnTop must be initialized');
+        if (!container || !(container instanceof HTMLElement)) throw new Error ('container must be HTMLElement');
 
-    /**
-     * starts clock and redrawing
-     * @param {HTMLElement} container
-     * @param {number} numberOnTop
-     * @param {string|undefined} color color of clock
-     * @param {number} speed speed. must be > 0
-     */
-    init(container, numberOnTop, color, speed) {
-        if (!container || !(container instanceof HTMLElement)) { throw new Error('Container must be HTMLElement'); }
-        if (!this.time) { throw new Error('Time must be initialized'); }
+        numberOnTop = Math.round(numberOnTop);
+        if (numberOnTop < 0) numberOnTop = 0;
+        if (numberOnTop >= CONFIG.consts.clocksQuantity) numberOnTop = CONFIG.consts.clocksQuantity-1;
+
         this.root = this.createRootElement(color);
         this.root.style.top = `${CONFIG.screen.paddingsTopBottom + numberOnTop * (CONFIG.clock.size + CONFIG.clock.margins)}px`;
-        const timeToDeath = this.calculateTimeToLive();
-        this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
-        // die. refactor this later
-        setTimeout(() => {
-            this.root.remove();
-        }, timeToDeath * 1000);
+        // const timeToDeath = this.calculateTimeToLive();
+        // this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
+        // // die. refactor this later
+        // setTimeout(() => {
+        //     this.root.remove();
+        // }, timeToDeath * 1000);
         container.appendChild(this.root);
         this.createHands();
-        this.redraw();
-        const realSpeed = (typeof speed === 'number' && speed > 0) ? speed : 1;
-        if (this.interval !== undefined) clearInterval(this.interval);
-        this.interval = setInterval(() => {
-            this.time.addASecond();
-            this.redraw();
-        }, 1000 / realSpeed);
-    }
-
-    /** stops this clock */
-    stop() {
-        if (this.interval !== undefined) clearInterval(this.interval);
-    }
-
-    redraw() {
         this.rotateHands();
+        // const realSpeed = (typeof speed === 'number' && speed > 0) ? speed : 1;
+        // if (this.interval !== undefined) clearInterval(this.interval);
+        // this.interval = setInterval(() => {
+        //     this.time.addASecond();
+        //     this.redraw();
+        // }, 1000 / realSpeed);
     }
+
+    // redraw() {
+    //     if (this.running) {
+    //         this.rotateHands();
+    //     }
+    //     this.moveRight();
+    // }
 
     /** @returns {HTMLElement} */
     createRootElement(color) {
         if (!this.time) { throw new Error('Time must be initialized'); }
         const rootBF = document.createElement('div');
+        const screenWidth = CONFIG.screen.width
+        this.currentLeft = screenWidth;
         rootBF.classList.add(CONFIG.clock.cssClass);
         rootBF.style.width = CONFIG.clock.size + 'px';
         rootBF.style.height = CONFIG.clock.size + 'px';
+        rootBF.style.left = currentLeft + 'px';
         rootBF.context = this;
-        // rootBF.style.border = `${CONFIG.clock.border}px solid ${color ? color : CONFIG.clock.defaultColor}`;
         rootBF.style.borderRadius = CONFIG.clock.size / 2 + 'px';
         rootBF.style.backgroundColor = color ? color : CONFIG.clock.defaultColor;
         rootBF.onclick = (e) => {
@@ -180,27 +168,35 @@ class Clock {
             for (const element of CONTAINER.children) {
                 /** @type {Clock} */
                 const context = element.context;
-                context.stop();
+                context.running = false;
                 context.time = targetContext.time.clone();
                 context.reverse = targetContext.reverse;
-                context.redraw();
+                context.rotateHands();
                 element.onclick = () => { };
             }
         }
         return rootBF;
     }
 
-    /**
-     * @return {number} calculated time to set to animation property
-     */
-    calculateTimeToLive() {
-        const smallDistance = CONFIG.clock.size + CONFIG.clock.margins;
-        const smallTime = 1 / CONFIG.consts.clocksPerSecond;
-        const velocity = smallDistance / smallTime;
-        const bigDistance = CONFIG.screen.width * 1.5; // Because animation is from left = 100vw to left = -50vw
-        const bigTime = bigDistance / velocity;
-        return bigTime;
+    /** ticks the clock */
+    tick(timestamp) {
+        timestamp = Time.normalizeTimeStamp(timestamp);
+        this.addTimeStamp(timestamp);
+        this.rotateHands(timestamp);
+        this.moveLeft(timestamp);
     }
+
+    // /**
+    //  * @return {number} calculated time to set to animation property
+    //  */
+    // calculateTimeToLive() {
+    //     const smallDistance = CONFIG.clock.size + CONFIG.clock.margins;
+    //     const smallTime = 1 / CONFIG.consts.clocksPerSecond;
+    //     const velocity = smallDistance / smallTime;
+    //     const bigDistance = CONFIG.screen.width * 1.5; // Because animation is from left = 100vw to left = -50vw
+    //     const bigTime = bigDistance / velocity;
+    //     return bigTime;
+    // }
 
     createHands() {
         /**
@@ -250,25 +246,44 @@ class Clock {
          * @param {boolean} reverse
          * @param {number} time current time
          * @param {number} maxTime maximal allowed time (12 for hours, 60 for minutes and seconds)
-         * @param {boolean} smooth if true, value will not be exactly in the number
          * @returns {number} angle in deg
          */
-        function countAngleByTime(reverse, time, maxTime, smooth) {
+        function countAngleByTime(reverse, time, maxTime) {
             let angle = 360 * time / maxTime;
-            if (!smooth) {
-                angle -= 360 % (360 / maxTime);
-            }
             if (reverse) angle *= -1;
             return angle;
         }
 
-        const hourAngle = countAngleByTime(this.reverse, this.time.hours + this.time.minutes / 60 + this.time.seconds / 3600, 12, true);
-        const minuteAngle = countAngleByTime(this.reverse, this.time.minutes + this.time.seconds / 60, 60, true);
-        const secondAngle = countAngleByTime(this.reverse, this.time.seconds, 60, false);
+        const hourAngle = countAngleByTime(this.reverse, this.time.getHours(false), 12);
+        const minuteAngle = countAngleByTime(this.reverse, this.time.getMinutes(false), 60);
+        const secondAngle = countAngleByTime(this.reverse, this.time.getSeconds(true), 60);
 
         this.hands.hour.style.transform = `rotate(${hourAngle}deg)`;
         this.hands.minute.style.transform = `rotate(${minuteAngle}deg)`;
         this.hands.second.style.transform = `rotate(${secondAngle}deg)`;
+    }
+
+    /** @param {number|undefined} timestamp timestamp time in milliseconds. Default is 0 */ 
+    addTimeStamp(timestamp) {
+        timestamp = Time.normalizeTimeStamp(timestamp);
+        this.time.addTimeStamp(timestamp);
+    }
+
+    /** 
+     * Moves rigth using given timestamp. Deletes itself if it already behind screen.
+     * @param {number|undefined} timestamp timestamp time in milliseconds. Default is 0
+    */
+    moveLeft(timestamp) {
+        timestamp = Time.normalizeTimeStamp(timestamp);
+        const width = CONFIG.clock.size + CONFIG.clock.margins; // px
+        const velocity = width / (CONFIG.consts.clocksPerSecond * 1000); // px/ms
+        const leftDelta = velocity * timestamp; // (px/ms)*ms=px
+        this.currentLeft -= leftDelta;
+        if (this.currentLeft < -1 * CONFIG.clock.size) {
+            this.root.remove(); // Die
+            return;
+        }
+        this.root.style.left = this.currentLeft + 'px';
     }
 }
 
@@ -287,15 +302,21 @@ class Time {
     
     /** @param {number|undefined} timestamp timestamp time in milliseconds. Default is 0 */ 
     addTimeStamp(timestamp) {
-        if (typeof (timestamp) === 'number') {
-            if (timestamp < 0) {
-                timestamp = timestamp % MILLIS_IN_CLOCK_FACE;
-                timestamp = MILLIS_IN_CLOCK_FACE - timestamp;
-            }
-            this.time = (this.time + timestamp) % MILLIS_IN_CLOCK_FACE;
-        }
+        timestamp = Time.normalizeTimeStamp(timestamp);
+        this.time = (this.time + timestamp) % MILLIS_IN_CLOCK_FACE;
 
         return this;
+    }
+
+    static normalizeTimeStamp(timestamp) {
+        if (typeof (timestamp) === 'number') {
+            timestamp = timestamp % MILLIS_IN_CLOCK_FACE;
+            if (timestamp < 0) {
+                timestamp = MILLIS_IN_CLOCK_FACE - timestamp;
+            }
+            return timestamp;
+        }
+        return 0;
     }
 
     /** 
@@ -331,15 +352,6 @@ class Time {
 
     /** @returns {string} time as string in format h:m:s */
     toString() {
-        // const time = this.time % MILLIS_IN_CLOCK_FACE;
-        // const fullSeconds = Math.floor(time / 1000);
-        // const seconds = (fullSeconds % 60); // fullSeconds % secondsInMinute(secondsInFace)
-        // const minutes = ((fullSeconds / 60) % 60); // fullMinutes % minutesInHour(minutesInFace)
-        // const hours = ((fullSeconds / 60 / 60) % 12);  // fullHours % hoursInFace
-        // // const seconds = Math.floor(fullSeconds % 60); // fullSeconds % secondsInMinute(secondsInFace)
-        // // const minutes = Math.floor((fullSeconds / 60) % 60); // fullMinutes % minutesInHour(minutesInFace)
-        // // const hours = Math.floor((fullSeconds / 60 / 60) % 12);  // fullHours % hoursInFace
-        // return `${hours}:${minutes}:${seconds}`;
         return `${this.getHours(true)}:${this.getMinutes(true)}:${this.getSeconds(true)}`;
     }
 
