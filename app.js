@@ -30,12 +30,10 @@ class Configurations {
     }
     one = (this.screen.height - this.screen.paddingsTopBottom * 2) / (this.consts.clocksQuantity + (this.consts.clocksQuantity - 1) * this.consts.coefClockMargin);
     clock = {
-        // border: this.one / 15,
         defaultColor: 'white',
         size: this.one,
         margins: this.one * this.consts.coefClockMargin,
         cssClass: 'clock',
-        // cssAnimationName: 'animateClock',
         hands: {
             hour: {
                 height: this.one / 3.5,
@@ -251,7 +249,7 @@ class Clock {
     moveLeft(timestamp) {
         timestamp = Time.normalizeTimeStamp(timestamp);
         const width = CONFIG.clock.size + CONFIG.clock.margins; // px
-        const velocity = width / (CONFIG.consts.clocksPerSecond * 1000); // px/ms
+        const velocity = width / (1000 / CONFIG.consts.clocksPerSecond); // px/(ms/quantity)=px/ms
         const leftDelta = velocity * timestamp; // (px/ms)*ms=px
         this.currentLeft -= leftDelta;
         if (this.currentLeft < -1 * CONFIG.clock.size) {
@@ -355,41 +353,6 @@ function map(num, frombottom, fromtop, tobottom, totop) {
     a += tobottom;
     return a;
 }
-
-
-// setInterval(() => {
-//     for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
-//         const colorId = Math.floor(map(Math.random(), 0, 1, 0, CONFIG.consts.colors.length));
-//         const reverseTrue = Math.random() < .2;
-//         const speed = (CONFIG.consts.minSpeed !== undefined && CONFIG.consts.maxSpeed !== undefined)
-//             ? map(Math.random(), 0, 1, CONFIG.consts.minSpeed, CONFIG.consts.maxSpeed)
-//             : 1;
-
-//         new Clock(
-//             Time.random(), 
-//             true, 
-//             CONTAINER, 
-//             i, 
-//             CONFIG.consts.colors[colorId],
-//             speed,
-//             reverseTrue);
-//     }
-// }, 1000 / CONFIG.consts.clocksPerSecond);
-
-
-// const timef = Time.random();
-
-
-// requestAnimationFrame(function measure(time) {
-// const delta = Math.round(time - prev);
-// prev = time;
-
-// timef.addTimeStamp(delta);
-
-// document.title = timef.toString();
-
-// requestAnimationFrame(measure);
-// });
 
 
 let previousTime = performance.now();
