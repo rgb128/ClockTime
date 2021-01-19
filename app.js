@@ -35,7 +35,7 @@ class Configurations {
         size: this.one,
         margins: this.one * this.consts.coefClockMargin,
         cssClass: 'clock',
-        cssAnimationName: 'animateClock',
+        // cssAnimationName: 'animateClock',
         hands: {
             hour: {
                 height: this.one / 3.5,
@@ -85,6 +85,9 @@ class Clock {
 
     running = true;
 
+    /** @type {number} */
+    speed;
+
     /** @type {boolean} */
     reverse;
 
@@ -114,6 +117,7 @@ class Clock {
         this.time = (time && time instanceof Time) ? time.clone() : new Time();
 
         this.reverse = reverse === true;
+        this.speed = speed;
 
         if (typeof numberOnTop !== 'number') throw new Error ('NumberOnTop must be initialized');
         if (!container || !(container instanceof HTMLElement)) throw new Error ('container must be HTMLElement');
@@ -124,29 +128,10 @@ class Clock {
 
         this.root = this.createRootElement(color);
         this.root.style.top = `${CONFIG.screen.paddingsTopBottom + numberOnTop * (CONFIG.clock.size + CONFIG.clock.margins)}px`;
-        // const timeToDeath = this.calculateTimeToLive();
-        // this.root.style.animation = `${CONFIG.clock.cssAnimationName} ${timeToDeath}s linear 1`;
-        // // die. refactor this later
-        // setTimeout(() => {
-        //     this.root.remove();
-        // }, timeToDeath * 1000);
         container.appendChild(this.root);
         this.createHands();
         this.rotateHands();
-        // const realSpeed = (typeof speed === 'number' && speed > 0) ? speed : 1;
-        // if (this.interval !== undefined) clearInterval(this.interval);
-        // this.interval = setInterval(() => {
-        //     this.time.addASecond();
-        //     this.redraw();
-        // }, 1000 / realSpeed);
     }
-
-    // redraw() {
-    //     if (this.running) {
-    //         this.rotateHands();
-    //     }
-    //     this.moveRight();
-    // }
 
     /** @returns {HTMLElement} */
     createRootElement(color) {
@@ -157,7 +142,7 @@ class Clock {
         rootBF.classList.add(CONFIG.clock.cssClass);
         rootBF.style.width = CONFIG.clock.size + 'px';
         rootBF.style.height = CONFIG.clock.size + 'px';
-        rootBF.style.left = currentLeft + 'px';
+        rootBF.style.left = this.currentLeft + 'px';
         rootBF.context = this;
         rootBF.style.borderRadius = CONFIG.clock.size / 2 + 'px';
         rootBF.style.backgroundColor = color ? color : CONFIG.clock.defaultColor;
@@ -181,22 +166,12 @@ class Clock {
     /** ticks the clock */
     tick(timestamp) {
         timestamp = Time.normalizeTimeStamp(timestamp);
-        this.addTimeStamp(timestamp);
-        this.rotateHands(timestamp);
+        if (this.running) {
+            this.addTimeStamp(timestamp * this.speed);
+            this.rotateHands();
+        }
         this.moveLeft(timestamp);
     }
-
-    // /**
-    //  * @return {number} calculated time to set to animation property
-    //  */
-    // calculateTimeToLive() {
-    //     const smallDistance = CONFIG.clock.size + CONFIG.clock.margins;
-    //     const smallTime = 1 / CONFIG.consts.clocksPerSecond;
-    //     const velocity = smallDistance / smallTime;
-    //     const bigDistance = CONFIG.screen.width * 1.5; // Because animation is from left = 100vw to left = -50vw
-    //     const bigTime = bigDistance / velocity;
-    //     return bigTime;
-    // }
 
     createHands() {
         /**
@@ -402,17 +377,70 @@ function map(num, frombottom, fromtop, tobottom, totop) {
 // }, 1000 / CONFIG.consts.clocksPerSecond);
 
 
-const timef = Time.random();
+// const timef = Time.random();
 
-let prev = performance.now();
 
-  requestAnimationFrame(function measure(time) {
-    const delta = Math.round(time - prev);
-    prev = time;
+// requestAnimationFrame(function measure(time) {
+// const delta = Math.round(time - prev);
+// prev = time;
 
-    timef.addTimeStamp(delta);
+// timef.addTimeStamp(delta);
+
+// document.title = timef.toString();
+
+// requestAnimationFrame(measure);
+// });
+
+
+let previousTime = performance.now();
+let millisFromLastCreation = 1000 / CONFIG.consts.clocksPerSecond;
+
+/**
+ * Main function for all animations
+ * @param {number} time 
+ */
+const animate = function (time) {
+    if (typeof time !== 'number') time = 0;
+
+    const delta = time - previousTime;
+    previousTime = time;
+
+    document.title = CONTAINER.childNodes.length;
+
+    // Create new portion of clocks
+    if (millisFromLastCreation / (1000 / CONFIG.consts.clocksPerSecond) >= 1) {
+        for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
+            const colorId = Math.floor(map(Math.random(), 0, 1, 0, CONFIG.consts.colors.length));
+            const reverseTrue = Math.random() < .2;
+            const speed = (CONFIG.consts.minSpeed !== undefined && CONFIG.consts.maxSpeed !== undefined)
+                ? map(Math.random(), 0, 1, CONFIG.consts.minSpeed, CONFIG.consts.maxSpeed)
+                : 1;
     
-    document.title = timef.toString();
+            new Clock(
+                Time.random(), 
+                CONTAINER, 
+                i, 
+                CONFIG.consts.colors[colorId],
+                speed,
+                reverseTrue);
+        }
+        millisFromLastCreation = 0;
+    } else {
+        millisFromLastCreation += delta;
+    }
 
-    requestAnimationFrame(measure);
-  })
+    //Tick all existing clocks
+    const clocks = Array.from(CONTAINER.childNodes);
+    for (const clock of clocks) {
+        /** @type {Clock|undefined} */
+        const context = clock.context;
+        if (context) {
+            context.tick(delta);
+        }
+    }
+
+
+    requestAnimationFrame(animate);
+}
+
+animate();

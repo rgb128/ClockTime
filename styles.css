@@ -12,14 +12,14 @@ body {
     border: none;
 }
 
-@keyframes animateClock {
+/* @keyframes animateClock {
     from {
         left: 100vw;
     }
     to {
         left: -50vw;
     }
-}
+} */
 
 .hand {
     position: absolute;
