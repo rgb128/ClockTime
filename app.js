@@ -59,7 +59,8 @@ class Configurations {
                 round: false,
                 color: 'black'
             }
-        }
+        },
+        creationMs: 1000 / this.consts.clocksPerSecond,
     };
 
     constructor() {}
@@ -113,6 +114,7 @@ class Clock {
     constructor(time, container, numberOnTop, color, speed, reverse) {
 
         this.time = (time && time instanceof Time) ? time.clone() : new Time();
+        console.log(this.time.toString());
 
         this.reverse = reverse === true;
         this.speed = speed;
@@ -137,11 +139,11 @@ class Clock {
         const rootBF = document.createElement('div');
         const screenWidth = CONFIG.screen.width
         this.currentLeft = screenWidth;
+        rootBF.context = this;
         rootBF.classList.add(CONFIG.clock.cssClass);
         rootBF.style.width = CONFIG.clock.size + 'px';
         rootBF.style.height = CONFIG.clock.size + 'px';
         rootBF.style.left = this.currentLeft + 'px';
-        rootBF.context = this;
         rootBF.style.borderRadius = CONFIG.clock.size / 2 + 'px';
         rootBF.style.backgroundColor = color ? color : CONFIG.clock.defaultColor;
         rootBF.onclick = (e) => {
@@ -238,7 +240,6 @@ class Clock {
 
     /** @param {number|undefined} timestamp timestamp time in milliseconds. Default is 0 */ 
     addTimeStamp(timestamp) {
-        timestamp = Time.normalizeTimeStamp(timestamp);
         this.time.addTimeStamp(timestamp);
     }
 
@@ -249,7 +250,7 @@ class Clock {
     moveLeft(timestamp) {
         timestamp = Time.normalizeTimeStamp(timestamp);
         const width = CONFIG.clock.size + CONFIG.clock.margins; // px
-        const velocity = width / (1000 / CONFIG.consts.clocksPerSecond); // px/(ms/quantity)=px/ms
+        const velocity = width / CONFIG.clock.creationMs; // px/ms
         const leftDelta = velocity * timestamp; // (px/ms)*ms=px
         this.currentLeft -= leftDelta;
         if (this.currentLeft < -1 * CONFIG.clock.size) {
@@ -267,7 +268,7 @@ class Time {
     /** @param {number|undefined} time Start time in milliseconds. Default is 0 */
     constructor(time) {
         if (typeof (time) === 'number' && time >= 0) {
-            this.time = time % MILLIS_IN_CLOCK_FACE;
+            this.time = Time.normalizeTimeStamp(time);
         } else {
             this.time = 0;
         }
@@ -330,7 +331,7 @@ class Time {
 
     /** @returns {Time} */
     clone() {
-        return new Time(this.hours, this.minutes, this.seconds);
+        return new Time(this.time);
     }
 
     /**
@@ -356,7 +357,7 @@ function map(num, frombottom, fromtop, tobottom, totop) {
 
 
 let previousTime = performance.now();
-let millisFromLastCreation = 1000 / CONFIG.consts.clocksPerSecond;
+let millisFromLastCreation = CONFIG.clock.creationMs;
 
 /**
  * Main function for all animations
@@ -371,7 +372,7 @@ const animate = function (time) {
     document.title = CONTAINER.childNodes.length;
 
     // Create new portion of clocks
-    if (millisFromLastCreation / (1000 / CONFIG.consts.clocksPerSecond) >= 1) {
+    if (millisFromLastCreation / CONFIG.clock.creationMs >= 1) {
         for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
             const colorId = Math.floor(map(Math.random(), 0, 1, 0, CONFIG.consts.colors.length));
             const reverseTrue = Math.random() < .2;
