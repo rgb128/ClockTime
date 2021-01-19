@@ -71,6 +71,7 @@ class Configurations {
 let CONFIG = new Configurations();
 
 const CONTAINER = document.getElementById('container');
+const MILLIS_IN_CLOCK_FACE = 12 * 60 * 60 * 1000;
 
 window.onresize = (e) => {
     CONFIG = new Configurations();
@@ -272,109 +273,74 @@ class Clock {
 }
 
 class Time {
-    /** @type {number} */
-    hours;
-    /** @type {number} */
-    minutes;
-    /** @type {number} */
-    seconds;
+    /**@type {number} Time in milliseconds */
+    time;
 
-    /**
-     * 
-     * @param {number|undefined} hours 
-     * @param {number|undefined} minutes 
-     * @param {number|undefined} seconds 
-     */
-    constructor(hours, minutes, seconds) {
-        if (typeof (hours) === 'number' && hours >= 0) {
-            this.hours = Math.round (hours) % 12;
+    /** @param {number|undefined} time Start time in milliseconds. Default is 0 */
+    constructor(time) {
+        if (typeof (time) === 'number' && time >= 0) {
+            this.time = time % MILLIS_IN_CLOCK_FACE;
         } else {
-            this.hours = 0;
-        }
-        if (typeof (minutes) === 'number' && minutes >= 0) {
-            this.minutes = Math.round (minutes) % 60;
-        } else {
-            this.minutes = 0;
-        }
-        if (typeof (seconds) === 'number' && seconds >= 0) {
-            this.seconds = Math.round (seconds) % 60;
-        } else {
-            this.seconds = 0;
+            this.time = 0;
         }
     }
     
-    /**
-     * 
-     * @param {number|undefined} hours 
-     * @param {number|undefined} minutes 
-     * @param {number|undefined} seconds 
-     * @returns {Time} this
-     */    
-    addTimeStamp(hours, minutes, seconds) {
-        if (typeof (seconds) === 'number') {
-            seconds = Math.round (seconds);
-            this.seconds += seconds;
-        } 
-        if (this.seconds >= 60) {
-            const newSecs = Math.round(this.seconds % 60);
-            const newMins = Math.floor(this.seconds / 60);
-            this.seconds = newSecs;
-            this.minutes += newMins;
-        } else if (this.seconds < 0) {
-            const newSecs = 60 + Math.round(this.seconds % 60);
-            const newMins = Math.floor(this.seconds / 60);
-            this.seconds = newSecs;
-            this.minutes += newMins;
-        }
-
-        if (typeof (minutes) === 'number') {
-            minutes = Math.round (minutes);
-            this.minutes += minutes;
-        } 
-        if (this.minutes >= 60) {
-            const newMins = Math.round(this.minutes % 60);
-            const newHrs = Math.floor(this.minutes / 60);
-            this.minutes = newMins;
-            this.hours += newHrs;
-        } else if (this.minutes < 0) {
-            const newMins = 60 + Math.round(this.minutes % 60);
-            const newHrs = Math.floor(this.minutes / 60);
-            this.minutes = newMins;
-            this.hours += newHrs;
-        }
-
-        if (typeof (hours) === 'number') {
-            hours = Math.round (hours);
-            this.hours += hours;
-        } 
-        if (this.hours >= 12) {
-            const newHrs = Math.round(this.hours % 12);
-            this.hours = newHrs;
-        } else if (this.hours < 0) {
-            const newHrs = 12 + Math.round(this.hours % 12);
-            this.hours = newHrs;
+    /** @param {number|undefined} timestamp timestamp time in milliseconds. Default is 0 */ 
+    addTimeStamp(timestamp) {
+        if (typeof (timestamp) === 'number') {
+            if (timestamp < 0) {
+                timestamp = timestamp % MILLIS_IN_CLOCK_FACE;
+                timestamp = MILLIS_IN_CLOCK_FACE - timestamp;
+            }
+            this.time = (this.time + timestamp) % MILLIS_IN_CLOCK_FACE;
         }
 
         return this;
     }
 
-    /**
-     * adds 1 second and returns this
-     * @returns {Time} 
-     */
-    addASecond() {
-        this.addTimeStamp(0, 0, 1);
-        return this;
+    /** 
+     * @param {boolean} whole if true, returned value will be floored. default is false 
+     * @returns {number}
+    */
+    getHours(whole) {
+        const time = this.time % MILLIS_IN_CLOCK_FACE;
+        const fullSeconds = Math.floor(time / 1000);
+        const hours = (fullSeconds / 60 / 60) % 12; // fullHours % hoursInFace
+        return whole === true ? Math.floor(hours) : hours;
+    }
+    /** 
+     * @param {boolean} whole if true, returned value will be floored. default is false 
+     * @returns {number}
+    */
+    getMinutes(whole) {
+        const time = this.time % MILLIS_IN_CLOCK_FACE;
+        const fullSeconds = Math.floor(time / 1000);
+        const minutes = (fullSeconds / 60) % 60; // fullMinutes % minutesInHour(minutesInFace)
+        return whole === true ? Math.floor(minutes) : minutes;
+    }
+    /** 
+     * @param {boolean} whole if true, returned value will be floored. default is false 
+     * @returns {number}
+    */
+    getSeconds(whole) {
+        const time = this.time % MILLIS_IN_CLOCK_FACE;
+        const fullSeconds = Math.floor(time / 1000);
+        const seconds = fullSeconds % 60; // fullSeconds % secondsInMinute(secondsInFace)
+        return whole === true ? Math.floor(seconds) : seconds;
     }
 
-    /**
-     * @returns {string} time as string in format hh:mm:ss
-     */
+    /** @returns {string} time as string in format h:m:s */
     toString() {
-        this.hours = Math.round(this.hours);
-        this.minutes = Math.round(this.minutes);
-        this.seconds = Math.round(this.seconds);
-        return `${this.hours}:${this.minutes}:${this.seconds}`;
+        // const time = this.time % MILLIS_IN_CLOCK_FACE;
+        // const fullSeconds = Math.floor(time / 1000);
+        // const seconds = (fullSeconds % 60); // fullSeconds % secondsInMinute(secondsInFace)
+        // const minutes = ((fullSeconds / 60) % 60); // fullMinutes % minutesInHour(minutesInFace)
+        // const hours = ((fullSeconds / 60 / 60) % 12);  // fullHours % hoursInFace
+        // // const seconds = Math.floor(fullSeconds % 60); // fullSeconds % secondsInMinute(secondsInFace)
+        // // const minutes = Math.floor((fullSeconds / 60) % 60); // fullMinutes % minutesInHour(minutesInFace)
+        // // const hours = Math.floor((fullSeconds / 60 / 60) % 12);  // fullHours % hoursInFace
+        // return `${hours}:${minutes}:${seconds}`;
+        return `${this.getHours(true)}:${this.getMinutes(true)}:${this.getSeconds(true)}`;
     }
 
     /** @returns {Time} */
@@ -392,11 +358,7 @@ class Time {
             max = Math.floor(max);
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
-        return new Time (
-            getRandomInt(0, 11),
-            getRandomInt(0, 59),
-            getRandomInt(0, 59)
-        );
+        return new Time (getRandomInt(0, MILLIS_IN_CLOCK_FACE));
     }
 }
 
@@ -408,21 +370,37 @@ function map(num, frombottom, fromtop, tobottom, totop) {
 }
 
 
-setInterval(() => {
-    for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
-        const colorId = Math.floor(map(Math.random(), 0, 1, 0, CONFIG.consts.colors.length));
-        const reverseTrue = Math.random() < .2;
-        const speed = (CONFIG.consts.minSpeed !== undefined && CONFIG.consts.maxSpeed !== undefined)
-            ? map(Math.random(), 0, 1, CONFIG.consts.minSpeed, CONFIG.consts.maxSpeed)
-            : 1;
+// setInterval(() => {
+//     for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
+//         const colorId = Math.floor(map(Math.random(), 0, 1, 0, CONFIG.consts.colors.length));
+//         const reverseTrue = Math.random() < .2;
+//         const speed = (CONFIG.consts.minSpeed !== undefined && CONFIG.consts.maxSpeed !== undefined)
+//             ? map(Math.random(), 0, 1, CONFIG.consts.minSpeed, CONFIG.consts.maxSpeed)
+//             : 1;
 
-        new Clock(
-            Time.random(), 
-            true, 
-            CONTAINER, 
-            i, 
-            CONFIG.consts.colors[colorId],
-            speed,
-            reverseTrue);
-    }
-}, 1000 / CONFIG.consts.clocksPerSecond);
+//         new Clock(
+//             Time.random(), 
+//             true, 
+//             CONTAINER, 
+//             i, 
+//             CONFIG.consts.colors[colorId],
+//             speed,
+//             reverseTrue);
+//     }
+// }, 1000 / CONFIG.consts.clocksPerSecond);
+
+
+const timef = Time.random();
+
+let prev = performance.now();
+
+  requestAnimationFrame(function measure(time) {
+    const delta = Math.round(time - prev);
+    prev = time;
+
+    timef.addTimeStamp(delta);
+    
+    document.title = timef.toString();
+
+    requestAnimationFrame(measure);
+  })
