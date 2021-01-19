@@ -369,8 +369,6 @@ const animate = function (time) {
     const delta = time - previousTime;
     previousTime = time;
 
-    document.title = CONTAINER.childNodes.length;
-
     // Create new portion of clocks
     if (millisFromLastCreation / CONFIG.clock.creationMs >= 1) {
         for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
