@@ -114,7 +114,6 @@ class Clock {
     constructor(time, container, numberOnTop, color, speed, reverse) {
 
         this.time = (time && time instanceof Time) ? time.clone() : new Time();
-        console.log(this.time.toString());
 
         this.reverse = reverse === true;
         this.speed = speed;
@@ -230,7 +229,7 @@ class Clock {
         }
 
         const hourAngle = countAngleByTime(this.reverse, this.time.getHours(false), 12);
-        const minuteAngle = countAngleByTime(this.reverse, this.time.getMinutes(false), 60);
+        const minuteAngle = countAngleByTime(this.reverse, this.time.getMinutes(true), 60);
         const secondAngle = countAngleByTime(this.reverse, this.time.getSeconds(true), 60);
 
         this.hands.hour.style.transform = `rotate(${hourAngle}deg)`;
