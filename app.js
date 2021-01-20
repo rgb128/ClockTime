@@ -368,8 +368,9 @@ const animate = function (time) {
     const delta = time - previousTime;
     previousTime = time;
 
-    // Create new portion of clocks
-    if (millisFromLastCreation / CONFIG.clock.creationMs >= 1) {
+    // Create new portion(s) of clocks
+    while (millisFromLastCreation >= CONFIG.clock.creationMs) {
+        millisFromLastCreation -= CONFIG.clock.creationMs;
         for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
             const colorId = Math.floor(map(Math.random(), 0, 1, 0, CONFIG.consts.colors.length));
             const reverseTrue = Math.random() < .2;
@@ -377,18 +378,16 @@ const animate = function (time) {
                 ? map(Math.random(), 0, 1, CONFIG.consts.minSpeed, CONFIG.consts.maxSpeed)
                 : 1;
     
-            new Clock(
+            (new Clock(
                 Time.random(), 
                 CONTAINER, 
                 i, 
                 CONFIG.consts.colors[colorId],
                 speed,
-                reverseTrue);
+                reverseTrue)).tick(millisFromLastCreation);
         }
-        millisFromLastCreation = 0;
-    } else {
-        millisFromLastCreation += delta;
     }
+    millisFromLastCreation += delta;
 
     //Tick all existing clocks
     const clocks = Array.from(CONTAINER.childNodes);
