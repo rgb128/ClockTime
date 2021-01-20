@@ -368,7 +368,7 @@ const animate = function (time) {
     const delta = time - previousTime;
     previousTime = time;
 
-    // Create new portion of clocks
+    // Create new portion(s) of clocks
     while (millisFromLastCreation >= CONFIG.clock.creationMs) {
         millisFromLastCreation -= CONFIG.clock.creationMs;
         for (let i = 0; i < CONFIG.consts.clocksQuantity; i-=-1) {
