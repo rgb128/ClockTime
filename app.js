@@ -356,7 +356,7 @@ function map(num, frombottom, fromtop, tobottom, totop) {
 
 
 let previousTime = performance.now();
-let millisFromLastCreation = CONFIG.clock.creationMs;
+let millisFromLastCreation = undefined;
 
 /**
  * Main function for all animations
@@ -367,7 +367,8 @@ const animate = function (time) {
 
     const delta = time - previousTime;
     previousTime = time;
-
+    
+    if (millisFromLastCreation === undefined) millisFromLastCreation = CONFIG.clock.creationMs;
     // Create new portion(s) of clocks
     while (millisFromLastCreation >= CONFIG.clock.creationMs) {
         millisFromLastCreation -= CONFIG.clock.creationMs;
